@@ -1,0 +1,1040 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Счётный лист Орлеана</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="img/icon.png" sizes="any">
+<link rel="apple-touch-icon" href="img/icon.png">
+<meta name="description" content="Подсчёт победных очков в настольной игре «Орлеан» с подсказками из правил">
+<meta property="og:title" content="Счётный лист Орлеана">
+<meta property="og:description" content="Подсчёт победных очков в настольной игре «Орлеан»">
+<meta property="og:image" content="img/cover.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Forum&family=PT+Sans:wght@400;700&display=swap">
+<style>
+:root{
+  --ground:#DFC79D; --surface:#F8EFDA; --surface-2:#EFE0C1; --ink:#33261A; --muted:#7C6446;
+  --line:#C9AE82; --accent:#9E2B25; --accent-ink:#FDF3DE; --accent-soft:#E8D2AC;
+  --gold:#B8891F; --focus:#1F5FA8; --shadow:rgba(60,40,15,.18);
+  --board:#6E5231; --board-ink:#FCF2DC; --board-cell:rgba(255,244,219,.16);
+  --display:Forum, Georgia, "Times New Roman", serif;
+  --body:"PT Sans", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#191308; --surface:#251C12; --surface-2:#302518; --ink:#F1E4CB; --muted:#AC9670;
+    --line:#4A3A24; --accent:#D8695F; --accent-ink:#1E1409; --accent-soft:#3D2E1C;
+    --gold:#E0B44A; --focus:#8FB8F2; --shadow:rgba(0,0,0,.45);
+    --board:#3A2B18; --board-cell:rgba(255,244,219,.1);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#191308; --surface:#251C12; --surface-2:#302518; --ink:#F1E4CB; --muted:#AC9670;
+  --line:#4A3A24; --accent:#D8695F; --accent-ink:#1E1409; --accent-soft:#3D2E1C;
+  --gold:#E0B44A; --focus:#8FB8F2; --shadow:rgba(0,0,0,.45);
+  --board:#3A2B18; --board-cell:rgba(255,244,219,.1);
+}
+*{box-sizing:border-box}
+[hidden]{display:none !important}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){ html{scroll-behavior:auto} }
+body{margin:0;color:var(--ink);font:400 16px/1.45 var(--body);-webkit-text-size-adjust:100%;
+  background:var(--ground) url("img/parchment.jpg") repeat;background-size:380px;
+  padding-bottom:calc(78px + env(safe-area-inset-bottom))}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) body{background-blend-mode:multiply} }
+:root[data-theme="dark"] body{background-blend-mode:multiply}
+button,input{font:inherit;color:inherit}
+button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+h1,h2,h3{text-wrap:balance}
+img{max-width:100%}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.board,.stepper,.seg,.owner,.vp,.hint-btn,.tot,.secnav,.ico{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+
+/* ---------- вымпел победных очков ---------- */
+.vp{--s:46px;position:relative;flex:none;width:var(--s);height:calc(var(--s) * 56 / 44);display:grid;place-items:center}
+.vp svg{position:absolute;inset:0;width:100%;height:100%}
+.vp b{position:relative;transform:translateY(-8%);font:700 calc(var(--s) * .52)/1 var(--body);
+  font-variant-numeric:lining-nums tabular-nums;color:#FFDE83;text-shadow:0 1px 2px rgba(0,0,0,.6),0 0 3px rgba(0,0,0,.35)}
+.vp.empty svg{opacity:.3;filter:grayscale(1)}
+.vp.empty b{color:#FFF1D2;font-weight:400}
+.vp.sm{--s:34px}
+.vp.md{--s:40px}
+
+/* ---------- шапка ---------- */
+.top{position:sticky;top:0;z-index:30;background:color-mix(in srgb,var(--ground) 90%,transparent);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-bottom:2px solid var(--line)}
+.top-row{max-width:1180px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:calc(7px + env(safe-area-inset-top)) 14px 3px}
+.brand{display:flex;align-items:center;gap:11px;min-width:0}
+.brand img{width:40px;height:40px;border-radius:9px;flex:none;box-shadow:0 1px 3px var(--shadow)}
+.brand h1{margin:0;font:400 29px/1 var(--display);letter-spacing:.01em}
+.brand small{display:block;font-size:11.5px;color:var(--muted);letter-spacing:.09em;text-transform:uppercase}
+.secnav{max-width:1180px;margin:0 auto;display:flex;gap:4px;overflow-x:auto;padding:5px 10px 7px;scrollbar-width:none}
+.secnav::-webkit-scrollbar{display:none}
+.secnav a{flex:none;padding:6px 14px;border-radius:999px;color:var(--ink);text-decoration:none;font-weight:700;font-size:15px}
+.secnav a[aria-current="true"]{background:var(--accent);color:var(--accent-ink)}
+
+.btn{font-weight:700;font-size:15px;padding:9px 14px;min-height:42px;border-radius:8px;border:1.5px solid var(--accent);
+  background:var(--accent);color:var(--accent-ink);cursor:pointer}
+.btn.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+.btn.danger{background:transparent;color:var(--accent);border-color:var(--accent)}
+.btn:disabled{opacity:.6;cursor:progress}
+.linkbtn{border:0;background:none;padding:6px 0;color:var(--muted);text-decoration:underline;text-underline-offset:3px;cursor:pointer;font-size:14px}
+
+/* ---------- раскладка ---------- */
+.layout{max-width:1180px;margin:0 auto;padding:6px 10px 20px;display:grid;gap:20px}
+@media (min-width:1000px){
+  .layout{grid-template-columns:minmax(0,1fr) 404px;align-items:start;padding-inline:16px}
+  .results{position:sticky;top:104px;max-height:calc(100vh - 186px);overflow:auto}
+}
+.group{scroll-margin-top:100px}
+.group > h2{margin:18px 4px 8px;font:400 27px/1.1 var(--display)}
+.cats{display:grid;gap:10px;margin-top:10px}
+
+/* ---------- табло как на игровом поле ---------- */
+.board{background:var(--board);border-radius:14px;padding:10px;
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.3),inset 0 0 26px rgba(0,0,0,.28),0 2px 6px var(--shadow)}
+.board.goods{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px}
+@media (max-width:560px){ .board.goods{grid-template-columns:repeat(3,minmax(0,1fr))} }
+.gcol{display:flex;flex-direction:column;align-items:center;gap:7px;padding:8px 5px 9px;border-radius:10px;background:var(--board-cell)}
+.gart{position:relative;width:100%;aspect-ratio:1;border-radius:8px;overflow:hidden;
+  box-shadow:0 1px 4px rgba(0,0,0,.4),inset 0 0 0 1px rgba(0,0,0,.35)}
+.gart img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.gline{display:flex;align-items:center;gap:6px}
+.gline img{width:34px;height:34px;flex:none;filter:drop-shadow(0 1px 2px rgba(0,0,0,.45))}
+.gcol small{color:var(--board-ink);font-weight:700;font-size:14.5px;line-height:1.15;text-align:center;text-shadow:0 1px 2px rgba(0,0,0,.7)}
+.board.formula{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:10px 14px;padding:16px 12px}
+.fitem{display:flex;flex-direction:column;align-items:center;gap:5px;max-width:110px}
+.fitem img{width:52px;height:52px;filter:drop-shadow(0 1px 3px rgba(0,0,0,.45))}
+.fitem span{color:var(--board-ink);font-size:13px;text-align:center;line-height:1.15;text-shadow:0 1px 2px rgba(0,0,0,.7)}
+.fop{font:400 34px/1 var(--display);color:var(--board-ink);text-shadow:0 1px 2px rgba(0,0,0,.7);padding-bottom:18px}
+
+/* ---------- карточки категорий ---------- */
+.cat{background:var(--surface);border:1.5px solid var(--line);border-radius:12px;padding:12px;box-shadow:0 1px 3px var(--shadow)}
+.cat-h{display:grid;grid-template-columns:48px minmax(0,1fr) auto;gap:10px;align-items:center}
+.ico{width:48px;height:48px;border-radius:9px;background:var(--surface-2);display:grid;place-items:center;overflow:hidden}
+.ico img{width:40px;height:40px;display:block}
+.cat-h h3{margin:0;font:700 19px/1.15 var(--body);display:flex;align-items:center;gap:6px}
+.donemark{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font-size:13px;font-weight:700}
+.rule{display:block;font-size:13.5px;color:var(--muted);line-height:1.25;margin-top:2px}
+.hint-btn{min-height:38px;padding:6px 12px;border-radius:999px;border:1.5px solid var(--line);background:var(--surface-2);color:var(--accent);font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap}
+.hint-btn[aria-expanded="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+
+.plist{list-style:none;margin:8px 0 0;padding:0}
+.prow{display:grid;grid-template-columns:minmax(0,1fr) auto 46px;gap:10px;align-items:center;padding:8px 0}
+.prow + .prow{border-top:1px solid var(--line)}
+.pname{display:flex;align-items:center;gap:8px;font-weight:700;font-size:17px;min-width:0}
+.pname span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pdot{display:inline-block;width:14px;height:14px;border-radius:50%;flex:none;box-shadow:0 0 0 1.5px rgba(0,0,0,.25)}
+.pn{color:var(--pn-l)}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .pn{color:var(--pn-d)} }
+:root[data-theme="dark"] .pn{color:var(--pn-d)}
+.prow.wide{grid-template-columns:minmax(0,1fr) 46px}
+.rctrl{grid-column:1 / -1;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px}
+.mini{display:flex;align-items:center;gap:7px}
+.mini > img{width:30px;height:30px;flex:none}
+.mini b{font-size:14px;color:var(--muted);font-weight:400}
+.lvlout{font:700 19px var(--body);color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+
+.stepper{display:flex;align-items:stretch;border:1.5px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface);flex:none}
+.stepper button{width:46px;height:46px;border:0;background:var(--surface-2);font:700 26px/1 var(--body);cursor:pointer;color:var(--ink)}
+.stepper button:active{background:var(--accent-soft)}
+.stepper input{width:54px;text-align:center;border:0;border-inline:1.5px solid var(--line);background:var(--surface);font:700 21px var(--body);
+  font-variant-numeric:tabular-nums;-moz-appearance:textfield;appearance:textfield;padding:0}
+.stepper input::placeholder{color:var(--muted);font-weight:400}
+.stepper input::-webkit-inner-spin-button,.stepper input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.stepper.sm button{width:38px;height:40px;font-size:21px}
+.stepper.sm input{width:44px;font-size:18px}
+/* монет бывает под сотню — их набирают с клавиатуры, а не кнопками */
+.stepper.lg input{width:104px;font-size:24px;letter-spacing:.02em}
+@media (max-width:360px){ .stepper button{width:40px} .stepper input{width:46px} .stepper.sm button{width:34px} .stepper.lg input{width:84px} }
+.keyhint{display:block;font-size:12.5px;color:var(--muted);margin-top:3px;text-align:center}
+
+.seg{display:inline-flex;border:1.5px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface)}
+.seg button{position:relative;width:46px;height:46px;border:0;background:var(--surface);cursor:pointer;display:grid;place-items:center;color:var(--ink)}
+.seg button + button{border-left:1.5px solid var(--line)}
+.seg button img{width:28px;height:28px;opacity:.28;filter:grayscale(.85)}
+.seg button[aria-pressed="true"]{background:var(--accent-soft)}
+.seg button[aria-pressed="true"] img{opacity:1;filter:none}
+.seg button b{position:absolute;font:700 14px var(--body);color:var(--ink);text-shadow:0 0 3px var(--surface),0 0 3px var(--surface)}
+@media (max-width:380px){ .seg button{width:40px;height:44px} }
+
+/* подсказка */
+.hint{display:grid;grid-template-columns:minmax(0,220px) minmax(0,1fr);gap:12px 18px;align-items:start;
+  background:var(--surface-2);border-radius:10px;padding:12px;margin-top:10px}
+@media (max-width:640px){ .hint{grid-template-columns:1fr} }
+.hint-art img{display:block;width:100%;max-width:280px;height:auto;border-radius:9px;box-shadow:0 2px 6px var(--shadow)}
+.hint-art figcaption{margin-top:5px;font-size:12.5px;color:var(--muted);text-align:center}
+.hint-text p{margin:0 0 8px;max-width:62ch}
+.hint-text p:last-child{margin-bottom:0}
+.hint-text .ex{font-weight:700}
+.eq{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding-top:6px}
+.eq-item{margin:0;display:flex;flex-direction:column;align-items:center;gap:3px}
+.eq-ico{position:relative;width:56px;height:56px;border:1.5px solid var(--line);border-radius:9px;background:var(--surface);display:grid;place-items:center}
+.eq-ico img{width:44px;height:44px}
+.eq-ico b{position:absolute;top:-8px;right:-8px;min-width:24px;height:24px;padding:0 6px;border-radius:12px;background:var(--accent);color:var(--accent-ink);
+  font-size:13px;display:grid;place-items:center;font-variant-numeric:tabular-nums}
+.eq-item figcaption{font-size:12px;color:var(--muted);text-align:center;max-width:76px;line-height:1.15}
+.op{font:400 24px var(--display);color:var(--muted);align-self:flex-start;margin-top:16px}
+.eq-res{align-self:flex-start;margin-top:8px;font-weight:700;font-size:17px;padding:7px 11px;border-radius:8px;background:var(--accent-soft);white-space:nowrap}
+.note{display:flex;gap:9px;align-items:flex-start;margin-top:10px;padding:10px 12px;border-radius:10px;
+  background:var(--surface-2);border-left:4px solid var(--accent);font-size:14.5px;line-height:1.35}
+.note img{width:34px;height:34px;flex:none}
+
+/* ---------- итоги ---------- */
+.results{background:var(--surface);border:1.5px solid var(--line);border-radius:12px;padding:14px;scroll-margin-top:100px;box-shadow:0 1px 3px var(--shadow)}
+.results > h2{margin:0 0 10px;font:400 26px/1.1 var(--display)}
+.podium{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.ptot{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;column-gap:10px;padding:10px 12px;
+  border:1.5px solid var(--line);border-radius:12px;background:var(--surface-2)}
+.ptot .pmeeple{grid-row:span 2;width:34px;height:34px;border-radius:50%;box-shadow:0 0 0 2px rgba(0,0,0,.2)}
+.ptname{font-weight:700;display:flex;align-items:baseline;gap:2px;min-width:0}
+.ptname .pn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ptot b{font:400 34px/1 var(--display);font-variant-numeric:tabular-nums}
+.ptot.lead{border-color:var(--gold);box-shadow:inset 0 0 0 1px var(--gold);background:color-mix(in srgb,var(--gold) 18%,var(--surface-2))}
+.ptot em{flex:none;font-style:normal;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);margin-left:5px}
+.rgroup{margin-top:16px}
+.rgroup h3{margin:0 2px 6px;font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.rscroll{overflow-x:auto;border-radius:14px}
+.rtable{display:grid;gap:4px;padding:8px;min-width:calc(160px + var(--n) * 46px)}
+.rrow{display:grid;grid-template-columns:34px minmax(0,1fr) repeat(var(--n),38px);gap:8px;align-items:center;padding:4px 8px;border-radius:9px;background:var(--board-cell)}
+.rrow.rhead{background:none;padding-block:0}
+.rhp{display:grid;place-items:center}
+.rhp i{display:block;width:22px;height:22px;border-radius:50%;box-shadow:0 0 0 1.5px rgba(0,0,0,.3)}
+.ricon img{width:32px;height:32px;display:block}
+.rname{color:var(--board-ink);font-weight:700;font-size:14.5px;line-height:1.15;text-shadow:0 1px 2px rgba(0,0,0,.7)}
+.rrow.rtotal{background:rgba(0,0,0,.28)}
+.rrow.rtotal .rname{font:400 20px var(--display)}
+
+/* ---------- ничья ---------- */
+.tie{border:1.5px solid var(--accent);border-radius:11px;padding:11px 12px;margin-bottom:10px;background:var(--accent-soft)}
+.tie b{display:block;font-size:15.5px;line-height:1.3}
+.tie p{margin:4px 0 9px;font-size:14px;color:var(--muted);line-height:1.3}
+.tbtns{display:flex;flex-wrap:wrap;gap:7px}
+.tbtns .btn{flex:1 1 auto;min-height:42px;font-size:15px;background:var(--surface);
+  display:inline-flex;align-items:center;justify-content:center;gap:7px}
+.tbtns .btn.all{flex-basis:100%;color:var(--muted)}
+.tie.done{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px}
+.tie.done b{flex:1 1 180px}
+.tie.done .linkbtn{flex:none;color:var(--accent)}
+.rtv{text-align:center;font:700 19px var(--body);font-variant-numeric:tabular-nums;color:var(--board-ink);text-shadow:0 1px 2px rgba(0,0,0,.7)}
+.rtv.lead{color:#FFD766}
+
+/* нижняя панель */
+.dock{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--surface);border-top:2px solid var(--line);
+  box-shadow:0 -6px 20px var(--shadow);padding:8px 10px calc(8px + env(safe-area-inset-bottom))}
+.dock-in{max-width:1180px;margin:0 auto;display:flex;gap:8px;overflow-x:auto}
+.tot{flex:1 0 auto;min-width:126px;display:flex;align-items:center;gap:8px;min-height:48px;padding:4px 12px;border-radius:10px;
+  background:var(--surface-2);color:var(--ink);text-decoration:none}
+.tot span{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:110px}
+.tot b{margin-left:auto;font:400 26px/1 var(--display);font-variant-numeric:tabular-nums}
+.tot.lead{box-shadow:inset 0 0 0 1.5px var(--gold);background:color-mix(in srgb,var(--gold) 18%,var(--surface-2))}
+
+/* диалоги */
+dialog{border:0;border-radius:14px;padding:0;width:min(560px,calc(100% - 20px));max-height:calc(100% - 40px);
+  background:var(--surface);color:var(--ink);box-shadow:0 20px 60px rgba(0,0,0,.4)}
+dialog::backdrop{background:rgba(30,20,8,.6)}
+.dlg-h{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 16px;border-bottom:1.5px solid var(--line)}
+.dlg-h h2{margin:0;font:400 24px var(--display)}
+.dlg-b{padding:4px 16px 12px;overflow:auto;max-height:66vh}
+.dlg-b.pad{padding:12px 16px}
+.pedit{display:grid;gap:8px;padding:12px 0;border-bottom:1px solid var(--line)}
+.pedit input{width:100%;min-width:0;font:700 18px var(--body);padding:10px 12px;border:1.5px solid var(--line);border-radius:9px;background:var(--surface-2)}
+.swatches{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.sw{width:32px;height:32px;border-radius:50%;padding:0;border:3px solid var(--surface);box-shadow:0 0 0 1px var(--line);cursor:pointer}
+.sw[aria-checked="true"]{box-shadow:0 0 0 2.5px var(--ink)}
+.swatches .linkbtn{margin-left:auto}
+.dlg-f{display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;padding:12px 16px;border-top:1.5px solid var(--line)}
+
+.export{margin-top:18px;padding-top:14px;border-top:1.5px solid var(--line)}
+.export h3{margin:0 2px 8px;font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.export-btns{display:flex;flex-wrap:wrap;gap:8px}
+.export-btns .btn{flex:1 1 auto}
+#exportImg{display:block;width:100%;height:auto;border-radius:10px;background:var(--surface-2)}
+.opt{display:flex;align-items:center;gap:10px;margin:0 0 12px;font-weight:700;cursor:pointer;line-height:1.3}
+.opt input{flex:none;width:22px;height:22px;margin:0;accent-color:var(--accent)}
+.sheet{margin:0;padding:12px;border-radius:10px;background:var(--surface-2);border:1.5px solid var(--line);
+  font:400 15px/1.5 ui-monospace,"Cascadia Mono",Consolas,"PT Sans",monospace;white-space:pre-wrap;overflow-x:auto;max-height:46vh}
+.saymsg{margin:10px 2px 0;font-size:14px;color:var(--muted);min-height:1.2em}
+.warn{margin:0 0 12px;padding:10px 12px;border-radius:9px;background:var(--accent-soft);font-size:14px;line-height:1.35}
+
+footer{max-width:1180px;margin:0 auto;padding:0 16px 24px;color:var(--muted);font-size:14px}
+footer p{margin:0 0 6px;max-width:78ch}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-row">
+    <div class="brand">
+      <img src="img/icon.png" alt="" width="40" height="40">
+      <div><h1>Орлеан</h1><small>Счётный лист</small></div>
+    </div>
+    <button type="button" class="btn ghost" id="openPlayers">Игроки</button>
+  </div>
+  <nav class="secnav" id="secnav" aria-label="Разделы подсчёта"></nav>
+</header>
+
+<main class="layout">
+  <div id="cats"></div>
+  <section class="results" id="results" aria-labelledby="resTitle">
+    <h2 id="resTitle">Итоги партии</h2>
+    <div id="tiebreak"></div>
+    <div class="podium" id="podium"></div>
+    <div id="rgroups"></div>
+    <div class="export">
+      <h3>Выгрузить результаты</h3>
+      <div class="export-btns">
+        <button type="button" class="btn" id="expTxt">Текст</button>
+        <button type="button" class="btn ghost" id="expImg">Картинка</button>
+        <button type="button" class="btn ghost" id="expJson">JSON</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <p>Правила подсчёта и все иллюстрации — из правил «Орлеана» (GaGa Games). Очки и имена игроков сохраняются только в вашем браузере и никуда не отправляются.</p>
+</footer>
+
+<nav class="dock" aria-label="Текущий счёт"><div class="dock-in" id="dock"></div></nav>
+
+<dialog id="playersDlg" aria-labelledby="dlgTitle">
+  <div class="dlg-h"><h2 id="dlgTitle">Игроки</h2><button type="button" class="btn ghost" data-close>Готово</button></div>
+  <div class="dlg-b" id="dlgBody"></div>
+  <div class="dlg-f">
+    <button type="button" class="btn ghost" id="addPlayer">+ Добавить игрока</button>
+    <button type="button" class="btn danger" id="resetScores">Новая партия</button>
+  </div>
+</dialog>
+
+<dialog id="textDlg" aria-labelledby="txtTitle">
+  <div class="dlg-h"><h2 id="txtTitle">Текст итогов</h2><button type="button" class="btn ghost" data-close>Закрыть</button></div>
+  <div class="dlg-b pad">
+    <label class="opt"><input type="checkbox" id="txtCounts"> Показывать количество: 2×5 вместо просто 10</label>
+    <pre class="sheet" id="txtSheet"></pre>
+    <p class="saymsg" id="txtSay"></p>
+  </div>
+  <div class="dlg-f">
+    <button type="button" class="btn ghost" id="txtFile">Скачать .txt</button>
+    <button type="button" class="btn" id="txtCopy">Копировать</button>
+  </div>
+</dialog>
+
+<dialog id="exportDlg" aria-labelledby="expTitle">
+  <div class="dlg-h"><h2 id="expTitle">Картинка итогов</h2><button type="button" class="btn ghost" data-close>Закрыть</button></div>
+  <div class="dlg-b pad">
+    <p class="warn" id="imgWarn" hidden></p>
+    <label class="opt"><input type="checkbox" id="expDetails"> Показывать количество жетонов</label>
+    <img id="exportImg" alt="Итоги партии">
+  </div>
+  <div class="dlg-f">
+    <button type="button" class="btn ghost" id="shareImg" hidden>Поделиться</button>
+    <button type="button" class="btn" id="saveImg">Скачать PNG</button>
+  </div>
+</dialog>
+
+<script>
+(() => {
+const STORE = 'orleans-scorer-v1';
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const plural = (n, f) => { const a = Math.abs(n) % 100, b = a % 10; return a > 10 && a < 20 ? f[2] : b > 1 && b < 5 ? f[1] : b === 1 ? f[0] : f[2]; };
+
+/* вымпел победных очков — как на странице подсчёта в правилах */
+const PENNANT = `<svg viewBox="0 0 44 56" aria-hidden="true">
+  <path d="M3.5 7.5c6-4.6 31-4.6 37 0L38 34.5 22 53 6 34.5Z" fill="#1F4E9C" stroke="#6E4E12" stroke-width="2.6" stroke-linejoin="round"/>
+  <path d="M3.5 7.5c6-4.6 31-4.6 37 0l-.8 8c-6-4.2-29.4-4.2-35.4 0Z" fill="#D2A02C"/>
+  <path d="M16.6 42.4h10.8L22 53Z" fill="#E9BC3E"/></svg>`;
+const vp = (n, cls = '') => `<span class="vp${n == null ? ' empty' : ''}${cls}">${PENNANT}<b>${n == null ? '—' : n}</b></span>`;
+
+const COLORS = {
+  /* [фишка, название, текст на фишке, имя на светлом фоне, имя на тёмном фоне] */
+  blue:  ['#2C6CB5', 'Синий',   '#FFFFFF', '#255C9C', '#8FBAF2'],
+  red:   ['#BE3A2B', 'Красный', '#FFFFFF', '#A93124', '#F0937F'],
+  green: ['#3E8A3C', 'Зелёный', '#FFFFFF', '#2E6A2C', '#8ACF83'],
+  yellow:['#DFAE1E', 'Жёлтый',  '#2A2010', '#7E6108', '#EFC84C']
+};
+const dot = p => `<i class="pdot" style="background:${COLORS[p.color][0]}"></i>`;
+const pnStyle = p => `--pn-l:${COLORS[p.color][3]};--pn-d:${COLORS[p.color][4]}`;
+const pn = p => `<span class="pn" style="${pnStyle(p)}">${esc(p.name || 'Без имени')}</span>`;
+const img = (n, a = '') => `<img src="img/${n}.png" alt="${esc(a)}" loading="lazy">`;
+
+/* ---------- товары и категории ---------- */
+const GOODS = [
+  {id:'brocade', name:'Парча',  vp:5, place:'Швейная мастерская', of:'парчи'},
+  {id:'wool',    name:'Шерсть', vp:4, place:'Прядильня',          of:'шерсти'},
+  {id:'wine',    name:'Вино',   vp:3, place:'Виноградник',        of:'вина'},
+  {id:'cheese',  name:'Сыр',    vp:2, place:'Сыроварня',          of:'сыра'},
+  {id:'grain',   name:'Зерно',  vp:1, place:'Сеновал',            of:'зерна'}
+];
+
+const goodHint = g => ({
+  art:`<img src="img/tile-${g.id}.jpg" alt="Тайл «${g.place}»" loading="lazy"><figcaption>${g.place} — место, где добывают этот товар</figcaption>`,
+  text:[`Посчитайте жетоны ${g.of} перед своим планшетом. Каждый жетон приносит <b>${g.vp} ${plural(g.vp, ['ПО', 'ПО', 'ПО'])}</b>.`,
+        `Товары, отданные во время «Налогов», «Засухи» или пыток, уже убраны из игры и не считаются.`],
+  eq:[{ico:g.id, n:3, cap:`жетона ${g.of}`}], eqRes:`3 × ${g.vp} = ${3 * g.vp} ПО`
+});
+
+const CATS = [
+  ...GOODS.map(g => ({id:g.id, kind:'unit', per:g.vp, name:g.name, short:g.name, ico:g.id, max:30,
+    rule:`${g.vp} ПО за жетон`, hint:() => goodHint(g)})),
+  {id:'coins', kind:'unit', per:1, name:'Монеты', short:'Монеты', ico:'coin', max:999, big:true,
+    rule:'1 ПО за монету — наберите число с клавиатуры',
+    hint:() => ({art:'<img src="img/coin.png" alt="Монета" style="max-width:150px;margin:0 auto;box-shadow:none">',
+      text:['Пересчитайте монеты, оставшиеся у вас в конце игры. <b>Каждая монета — 1 ПО.</b>',
+            'Монет к концу партии набирается много, поэтому просто нажмите на поле и наберите число.'],
+      eq:[{ico:'coin', n:12, cap:'монет'}], eqRes:'12 ПО'})},
+  {id:'level', kind:'level', name:'Уровень развития', short:'Уровень развития', ico:'star',
+    rule:'Множитель для факторий и жетонов горожан',
+    hint:() => ({art:'<img src="img/star.png" alt="Звезда уровня развития" style="max-width:150px;margin:0 auto;box-shadow:none">',
+      text:['Уровень развития — это <b>жёлтая звезда</b>, которую ваш маркер на шкале развития прошёл последней. В начале игры уровень равен 1, максимум — 5.',
+            'Сам по себе уровень очков не даёт: на него умножаются фактории и жетоны горожан.',
+            'При равенстве очков побеждает тот, кто продвинулся дальше по шкале развития — поэтому уровень стоит ввести всем.']})},
+  {id:'city', kind:'city', name:'Фактории и горожане', short:'Фактории и горожане', ico:'station',
+    rule:'(фактории + жетоны горожан) × уровень развития',
+    hint:() => ({art:'<img src="img/citizen.png" alt="Жетон горожанина" style="max-width:130px;margin:0 auto;box-shadow:none">',
+      text:['Сложите <b>построенные фактории</b> и <b>жетоны горожан</b>, затем умножьте сумму на свой уровень развития.',
+            'Жетоны горожан приходят со шкалы развития, со шкал моряков и рыцарей, с поля благородных деяний — и один достаётся тому, кто построил больше всех факторий.'],
+      ex:'Пример из правил: Карл построил 5 факторий и получил 2 жетона горожан при уровне развития 4 → (5 + 2) × 4 = 28 ПО.',
+      eq:[{ico:'station', n:5, cap:'фактории'}, {op:'+'}, {ico:'citizen', n:2, cap:'горожанина'}, {op:'×'}, {ico:'star', n:4, cap:'уровень'}],
+      eqRes:'(5 + 2) × 4 = 28 ПО'})}
+];
+const CAT = Object.fromEntries(CATS.map(c => [c.id, c]));
+
+const GROUPS = [
+  {id:'goods', title:'Товары', nav:'Товары', cats:GOODS.map(g => g.id)},
+  {id:'coins', title:'Монеты', nav:'Монеты', cats:['coins']},
+  {id:'city',  title:'Город',  nav:'Город',  cats:['level', 'city']}
+];
+
+function boardHTML(g) {
+  if (g.id === 'goods') return `<div class="board goods" role="group" aria-label="Сколько очков стоят товары">${GOODS.map(x =>
+    `<div class="gcol"><div class="gart"><img src="img/tile-${x.id}.jpg" alt="" loading="lazy"></div>
+      <div class="gline">${img(x.id, x.name)}${vp(x.vp, ' sm')}</div><small>${x.name}</small></div>`).join('')}</div>`;
+  if (g.id === 'coins') return `<div class="board formula" role="group" aria-label="Сколько очков стоит монета">
+    <div class="fitem">${img('coin', 'Монета')}<span>1 монета</span></div><div class="fop">=</div>
+    <div class="fitem">${vp(1, ' md')}<span>1 победное очко</span></div></div>`;
+  return `<div class="board formula" role="group" aria-label="Как считаются фактории и горожане">
+    <div class="fop">(</div>
+    <div class="fitem">${img('station', 'Фактория')}<span>фактории</span></div><div class="fop">+</div>
+    <div class="fitem">${img('citizen', 'Жетон горожанина')}<span>жетоны горожан</span></div>
+    <div class="fop">)</div><div class="fop">×</div>
+    <div class="fitem">${img('star', 'Уровень развития')}<span>уровень развития</span></div></div>`;
+}
+
+/* ---------- состояние ---------- */
+const uid = () => 'p' + Math.random().toString(36).slice(2, 9);
+const blank = () => ({brocade:null, wool:null, wine:null, cheese:null, grain:null, coins:null,
+  level:1, stations:null, citizens:null});
+const mkPlayer = (name, color) => ({id:uid(), name, color, v:blank()});
+/* tie — ответ на вопрос «кто дальше по шкале развития» при ничьей: {key, choice} */
+const freshState = () => ({players:[mkPlayer('Игрок 1', 'blue'), mkPlayer('Игрок 2', 'red')], tie:null});
+
+/* Имена и цвета игроков дублируются в куки на 400 дней (больше браузеры не разрешают),
+   очки текущей партии хранятся в localStorage. */
+const COOKIE = 'orleans_players', COOKIE_DAYS = 400;
+function readPlayersCookie() {
+  try {
+    const m = document.cookie.match(new RegExp('(?:^|; )' + COOKIE + '=([^;]*)'));
+    if (!m) return null;
+    const list = JSON.parse(decodeURIComponent(m[1]));
+    if (!Array.isArray(list)) return null;
+    const ok = list.filter(x => x && typeof x.n === 'string').slice(0, 4);
+    return ok.length ? ok : null;
+  } catch (e) { return null; }
+}
+function writePlayersCookie() {
+  try {
+    const data = encodeURIComponent(JSON.stringify(state.players.map(p => ({n:p.name, c:p.color}))));
+    const path = location.pathname.replace(/[^/]*$/, '') || '/';
+    document.cookie = `${COOKIE}=${data}; max-age=${COOKIE_DAYS * 86400}; path=${path}; SameSite=Lax${location.protocol === 'https:' ? '; Secure' : ''}`;
+  } catch (e) {}
+}
+
+let state;
+try {
+  const raw = JSON.parse(localStorage.getItem(STORE));
+  if (raw && Array.isArray(raw.players) && raw.players.length) {
+    raw.players.forEach(p => { p.id = p.id || uid(); p.v = Object.assign(blank(), p.v); if (!COLORS[p.color]) p.color = 'blue'; });
+    state = {players:raw.players, tie:raw.tie || null};
+  }
+} catch (e) {}
+if (!state) {
+  const saved = readPlayersCookie();
+  state = saved ? {players:saved.map(x => mkPlayer(x.n, COLORS[x.c] ? x.c : 'blue')), tie:null} : freshState();
+}
+const save = () => { try { localStorage.setItem(STORE, JSON.stringify(state)); } catch (e) {} writePlayersCookie(); };
+writePlayersCookie(); /* продлеваем срок куки при каждом заходе */
+const byId = id => state.players.find(p => p.id === id);
+
+function points(p, c) {
+  const v = p.v;
+  if (c.kind === 'unit') return v[c.id] == null ? null : v[c.id] * c.per;
+  if (c.kind === 'city') return v.stations == null && v.citizens == null ? null
+    : ((v.stations || 0) + (v.citizens || 0)) * (v.level || 1);
+  return null; /* уровень развития сам по себе очков не даёт */
+}
+const total = p => CATS.reduce((s, c) => s + (points(p, c) || 0), 0);
+
+/* ---------- отрисовка ---------- */
+const catsEl = $('#cats'), dock = $('#dock'), secnav = $('#secnav'), podium = $('#podium'), rgroups = $('#rgroups'), tieEl = $('#tiebreak');
+const openHints = new Set();
+
+const stepper = (key, pid, val, min, max, label, size) =>
+  `<div class="stepper${size ? ' ' + size : ''}"><button type="button" data-step="-1" aria-label="${esc(label)}: меньше">−</button>` +
+  `<input type="number" inputmode="numeric" pattern="[0-9]*" placeholder="—" enterkeyhint="done" data-key="${key}" data-pid="${pid}" value="${val ?? ''}" min="${min}" max="${max}" aria-label="${esc(label)}">` +
+  `<button type="button" data-step="1" aria-label="${esc(label)}: больше">+</button></div>`;
+
+function hintHTML(c) {
+  const h = c.hint(), open = openHints.has(c.id);
+  const eq = h.eq ? `<div class="eq">${h.eq.map(e => e.op
+      ? `<span class="op">${e.op}</span>`
+      : `<figure class="eq-item"><span class="eq-ico">${img(e.ico)}<b>${e.n}</b></span><figcaption>${e.cap}</figcaption></figure>`).join('')}
+    ${h.eqRes ? `<span class="eq-res">= ${h.eqRes}</span>` : ''}</div>` : '';
+  return `<div class="hint" id="hint-${c.id}"${open ? '' : ' hidden'}>
+    <figure class="hint-art" style="margin:0">${h.art || ''}</figure>
+    <div class="hint-text">${h.text.map(t => `<p>${t}</p>`).join('')}${h.ex ? `<p class="ex">${h.ex}</p>` : ''}${eq}</div></div>`;
+}
+
+function catHTML(c) {
+  const open = openHints.has(c.id), ps = state.players;
+  const head = `<header class="cat-h">
+      <div class="ico">${img(c.ico, c.name)}</div>
+      <div><h3>${c.name}<span class="donemark" data-done="${c.id}" hidden title="Посчитано у всех">✓</span></h3><span class="rule">${c.rule}</span></div>
+      <button type="button" class="hint-btn" aria-expanded="${open}" aria-controls="hint-${c.id}">${open ? 'Скрыть' : 'Как считать'}</button>
+    </header>`;
+  const name = p => `<span class="pname">${dot(p)}${pn(p)}</span>`;
+  const pts = p => `<output class="vp" data-pts="${c.id}" data-pid="${p.id}">${PENNANT}<b>—</b></output>`;
+  let body;
+  if (c.kind === 'level') {
+    body = `<ul class="plist">${ps.map(p => `<li class="prow wide">${name(p)}<span class="lvlout" data-lvl="${p.id}"></span>
+      <div class="rctrl"><div class="seg" role="group" aria-label="Уровень развития: ${esc(p.name)}">${[1,2,3,4,5].map(n =>
+        `<button type="button" data-level="${n}" data-pid="${p.id}" aria-pressed="${(p.v.level || 1) === n}" aria-label="Уровень ${n}">${img('star')}<b>${n}</b></button>`).join('')}</div></div></li>`).join('')}</ul>`;
+  } else if (c.kind === 'city') {
+    body = `<ul class="plist">${ps.map(p => `<li class="prow wide">${name(p)}${pts(p)}
+      <div class="rctrl">
+        <label class="mini">${img('station', 'Фактории')}${stepper('stations', p.id, p.v.stations, 0, 10, 'Фактории: ' + p.name, 'sm')}</label>
+        <label class="mini">${img('citizen', 'Жетоны горожан')}${stepper('citizens', p.id, p.v.citizens, 0, 14, 'Жетоны горожан: ' + p.name, 'sm')}</label>
+        <span class="mini"><b data-city="${p.id}"></b></span>
+      </div></li>`).join('')}</ul>
+      <div class="note">${img('citizen')}<span>Перед подсчётом отдайте жетон горожанина из верхнего левого угла поля тому, кто построил <b>больше всех факторий</b>. При ничьей его не получает никто.</span></div>`;
+  } else {
+    body = `<ul class="plist">${ps.map(p => `<li class="prow">${name(p)}${stepper(c.id, p.id, p.v[c.id], 0, c.max, c.name + ': ' + p.name, c.big ? 'lg' : '')}${pts(p)}</li>`).join('')}</ul>`;
+  }
+  return `<article class="cat" id="cat-${c.id}">${head}${hintHTML(c)}${body}</article>`;
+}
+
+function renderAll() {
+  catsEl.innerHTML = GROUPS.map(g => `<section class="group" id="g-${g.id}" aria-labelledby="gh-${g.id}">
+    <h2 id="gh-${g.id}">${g.title}</h2>${boardHTML(g)}
+    <div class="cats">${g.cats.map(id => catHTML(CAT[id])).join('')}</div></section>`).join('');
+  secnav.innerHTML = GROUPS.map((g, i) => `<a href="#g-${g.id}" data-nav="g-${g.id}" aria-current="${i === 0}">${g.nav}</a>`).join('')
+    + '<a href="#results" data-nav="results" aria-current="false">Итоги</a>';
+  update(); spy();
+}
+
+function update() {
+  const ps = state.players;
+  ps.forEach(p => CATS.forEach(c => {
+    const el = catsEl.querySelector(`[data-pts="${c.id}"][data-pid="${p.id}"]`); if (!el) return;
+    const n = points(p, c);
+    el.querySelector('b').textContent = n == null ? '—' : n;
+    el.classList.toggle('empty', n == null);
+  }));
+  ps.forEach(p => {
+    const lv = catsEl.querySelector(`[data-lvl="${p.id}"]`); if (lv) lv.textContent = '× ' + (p.v.level || 1);
+    const ct = catsEl.querySelector(`[data-city="${p.id}"]`);
+    if (ct) ct.textContent = `(${p.v.stations || 0} + ${p.v.citizens || 0}) × ${p.v.level || 1}`;
+  });
+  catsEl.querySelectorAll('[data-level]').forEach(b =>
+    b.setAttribute('aria-pressed', String((byId(b.dataset.pid).v.level || 1) === +b.dataset.level)));
+  CATS.forEach(c => {
+    const dm = catsEl.querySelector(`[data-done="${c.id}"]`); if (!dm) return;
+    dm.hidden = c.kind === 'level' /* уровень есть у всех всегда, отмечать нечего */
+      || !ps.every(p => (c.kind === 'city' ? p.v.stations != null && p.v.citizens != null : p.v[c.id] != null));
+  });
+  const st = standing();
+  renderDock(st); renderResults(st);
+}
+
+/* Кто победил. По правилам при равенстве очков побеждает тот, кто продвинулся дальше
+   по шкале развития. Более высокий уровень — это заведомо более дальнее деление, такую
+   ничью разрешаем сами. А вот кто дальше внутри одного уровня — по планшетам не видно,
+   про это спрашиваем игроков. */
+function standing() {
+  const ps = state.players, totals = ps.map(total), max = Math.max(...totals, 0);
+  const top = ps.map((p, i) => i).filter(i => totals[i] === max);
+  const bestLvl = Math.max(...top.map(i => ps[i].v.level || 1));
+  const finalists = top.filter(i => (ps[i].v.level || 1) === bestLvl);
+  const live = ps.length > 1 && max > 0;
+  const key = finalists.map(i => ps[i].id).sort().join('|');
+  const choice = state.tie && state.tie.key === key ? state.tie.choice : null;
+  let winners = [];
+  if (live) {
+    if (finalists.length === 1 || choice === 'all') winners = finalists;
+    else if (choice) { const i = ps.findIndex(p => p.id === choice); if (i >= 0) winners = [i]; }
+  }
+  return {totals, max, finalists, key, choice, winners,
+    tied: live && finalists.length > 1,      /* ничью надо разрешить */
+    ask: live && finalists.length > 1 && !choice,
+    isLead: i => winners.includes(i)};
+}
+
+function renderDock(st) {
+  dock.innerHTML = state.players.map((p, i) =>
+    `<a class="tot${st.isLead(i) ? ' lead' : ''}" href="#results">${dot(p)}${pn(p)}<b>${st.totals[i]}</b></a>`).join('');
+}
+
+function renderTie(st) {
+  const ps = state.players;
+  if (!st.tied) { tieEl.innerHTML = ''; return; }
+  const pts = `${st.max} ${plural(st.max, ['очко', 'очка', 'очков'])}`;
+  if (st.ask) {
+    tieEl.innerHTML = `<div class="tie">
+      <b>Ничья: ${pts} у ${st.finalists.length} игроков и одинаковый уровень развития.</b>
+      <p>По правилам побеждает тот, кто продвинулся дальше по шкале развития. Посмотрите на маркеры — чей дальше?</p>
+      <div class="tbtns">${st.finalists.map(i =>
+        `<button type="button" class="btn ghost" data-tie="${ps[i].id}">${dot(ps[i])}${pn(ps[i])}</button>`).join('')}
+        <button type="button" class="btn ghost all" data-tie="all">Маркеры на одном делении — победителей несколько</button></div></div>`;
+    return;
+  }
+  const who = st.choice === 'all'
+    ? 'маркеры на одном делении, победителей несколько'
+    : `дальше по шкале развития ${state.players.find(p => p.id === st.choice)?.name || '—'}`;
+  tieEl.innerHTML = `<div class="tie done"><b>Ничья по очкам (${pts}): ${who}.</b>
+    <button type="button" class="linkbtn" data-tie="ask">изменить</button></div>`;
+}
+
+function renderResults(st) {
+  const ps = state.players, {totals, isLead} = st;
+  renderTie(st);
+  podium.innerHTML = ps.map((p, i) => `<div class="ptot${isLead(i) ? ' lead' : ''}">
+    <i class="pmeeple" style="background:${COLORS[p.color][0]}"></i>
+    <span class="ptname">${pn(p)}${isLead(i) ? '<em>лидер</em>' : ''}</span><b>${totals[i]}</b></div>`).join('');
+  rgroups.innerHTML = GROUPS.map(g => `<div class="rgroup"><h3>${g.title}</h3><div class="rscroll">
+    <div class="board rtable" style="--n:${ps.length}" role="table" aria-label="${g.title}">
+      <div class="rrow rhead" role="row"><span role="columnheader"><span class="sr">Значок</span></span>
+        <span role="columnheader"><span class="sr">Категория</span></span>
+        ${ps.map(p => `<span class="rhp" role="columnheader" title="${esc(p.name)}"><i style="background:${COLORS[p.color][0]}"></i><span class="sr">${esc(p.name)}</span></span>`).join('')}</div>
+      ${g.cats.filter(id => CAT[id].kind !== 'level').map(id => { const c = CAT[id];
+        return `<div class="rrow" role="row"><span class="ricon" role="cell">${img(c.ico)}</span>
+          <span class="rname" role="rowheader">${c.short}</span>
+          ${ps.map(p => `<span role="cell">${vp(points(p, c), ' sm')}</span>`).join('')}</div>`; }).join('')}
+    </div></div></div>`).join('')
+    + `<div class="rgroup"><div class="rscroll"><div class="board rtable" style="--n:${ps.length}" role="table" aria-label="Итого">
+      <div class="rrow rtotal" role="row"><span class="ricon" role="cell">${img('star')}</span>
+        <span class="rname" role="rowheader">Итого</span>
+        ${ps.map((p, i) => `<span class="rtv${isLead(i) ? ' lead' : ''}" role="cell">${totals[i]}</span>`).join('')}</div>
+    </div></div></div>`;
+}
+
+$('#results').addEventListener('click', e => {
+  const tb = e.target.closest('[data-tie]'); if (!tb) return;
+  state.tie = tb.dataset.tie === 'ask' ? null : {key:standing().key, choice:tb.dataset.tie};
+  save(); update();
+});
+
+let observer;
+function spy() {
+  if (!('IntersectionObserver' in window)) return;
+  if (observer) observer.disconnect();
+  const set = id => secnav.querySelectorAll('[data-nav]').forEach(a => a.setAttribute('aria-current', String(a.dataset.nav === id)));
+  observer = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) set(e.target.id); }), {rootMargin:'-35% 0px -60% 0px'});
+  /* на широком экране итоги «прилипли» сбоку и видны всегда — следим только за разделами */
+  const sel = matchMedia('(min-width:1000px)').matches ? '.group' : '.group, #results';
+  document.querySelectorAll(sel).forEach(s => observer.observe(s));
+}
+
+/* ---------- ввод ---------- */
+const clamp = (n, inp) => Math.min(+inp.max, Math.max(+inp.min, n));
+const changed = () => { save(); update(); };
+
+catsEl.addEventListener('click', e => {
+  const step = e.target.closest('[data-step]');
+  if (step) {
+    const inp = step.parentElement.querySelector('input'), d = +step.dataset.step;
+    const now = inp.value === '' ? null : parseInt(inp.value, 10);
+    const n = clamp(now == null || isNaN(now) ? (d > 0 ? 1 : 0) : now + d, inp);
+    inp.value = n; byId(inp.dataset.pid).v[inp.dataset.key] = n; changed(); return;
+  }
+  const hb = e.target.closest('.hint-btn');
+  if (hb) {
+    const id = hb.getAttribute('aria-controls'), h = document.getElementById(id), open = h.hidden;
+    h.hidden = !open; hb.setAttribute('aria-expanded', String(open)); hb.textContent = open ? 'Скрыть' : 'Как считать';
+    const cid = id.slice(5); if (open) openHints.add(cid); else openHints.delete(cid);
+    return;
+  }
+  const lv = e.target.closest('[data-level]');
+  if (lv) { byId(lv.dataset.pid).v.level = +lv.dataset.level; changed(); }
+});
+catsEl.addEventListener('input', e => {
+  const inp = e.target.closest('[data-key]'); if (!inp) return;
+  const p = byId(inp.dataset.pid);
+  if (inp.value === '') { p.v[inp.dataset.key] = null; changed(); return; }
+  const n = parseInt(inp.value, 10); if (isNaN(n)) return;
+  p.v[inp.dataset.key] = clamp(n, inp); changed();
+});
+catsEl.addEventListener('change', e => {
+  const inp = e.target.closest('[data-key]');
+  if (inp) inp.value = byId(inp.dataset.pid).v[inp.dataset.key] ?? '';
+});
+catsEl.addEventListener('focusin', e => { if (e.target.matches('[data-key]')) e.target.select(); });
+
+/* ---------- игроки ---------- */
+const dlg = $('#playersDlg'), dlgBody = $('#dlgBody');
+const openDlg = d => d.showModal ? d.showModal() : d.setAttribute('open', '');
+const closeDlg = d => d.close ? d.close() : d.removeAttribute('open');
+function renderDialog() {
+  dlgBody.innerHTML = state.players.map(p => `<div class="pedit">
+    <input class="pn" style="${pnStyle(p)}" value="${esc(p.name)}" maxlength="24" data-name="${p.id}" aria-label="Имя игрока" enterkeyhint="done">
+    <div class="swatches" role="radiogroup" aria-label="Цвет: ${esc(p.name)}">
+      ${Object.entries(COLORS).map(([k, [hex, label]]) =>
+        `<button type="button" class="sw" role="radio" aria-checked="${p.color === k}" aria-label="${label}" data-color="${k}" data-pid="${p.id}" style="background:${hex}"></button>`).join('')}
+      ${state.players.length > 1 ? `<button type="button" class="linkbtn" data-remove="${p.id}">удалить</button>` : ''}
+    </div></div>`).join('');
+  $('#addPlayer').hidden = state.players.length >= 4;
+}
+$('#openPlayers').addEventListener('click', () => { renderDialog(); openDlg(dlg); });
+dlg.addEventListener('click', e => {
+  if (e.target === dlg || e.target.closest('[data-close]')) { closeDlg(dlg); return; }
+  const sw = e.target.closest('[data-color]');
+  if (sw) { byId(sw.dataset.pid).color = sw.dataset.color; save(); renderDialog(); renderAll(); return; }
+  const rm = e.target.closest('[data-remove]');
+  if (rm) {
+    const p = byId(rm.dataset.remove);
+    if (!confirm(`Удалить игрока «${p.name}»?`)) return;
+    state.players = state.players.filter(q => q !== p);
+    save(); renderDialog(); renderAll();
+  }
+});
+dlgBody.addEventListener('input', e => {
+  const inp = e.target.closest('[data-name]'); if (!inp) return;
+  byId(inp.dataset.name).name = inp.value; save(); renderAll();
+});
+$('#addPlayer').addEventListener('click', () => {
+  const used = state.players.map(p => p.color);
+  state.players.push(mkPlayer('Игрок ' + (state.players.length + 1), Object.keys(COLORS).find(k => !used.includes(k)) || 'blue'));
+  save(); renderDialog(); renderAll();
+});
+$('#resetScores').addEventListener('click', () => {
+  if (!confirm('Начать новую партию? Все очки сотрутся, игроки останутся.')) return;
+  state.players.forEach(p => { p.v = blank(); });
+  state.tie = null;
+  save(); renderAll(); closeDlg(dlg); window.scrollTo({top:0});
+});
+
+/* ---------- выгрузка результатов ---------- */
+const pad2 = x => String(x).padStart(2, '0');
+const stamp = d => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}-${pad2(d.getHours())}${pad2(d.getMinutes())}`;
+const dateRu = d => d.toLocaleString('ru-RU', {day:'numeric', month:'long', year:'numeric', hour:'2-digit', minute:'2-digit'});
+const placeOf = (totals, i) => 1 + totals.filter(t => t > totals[i]).length;
+/* победитель ничьей идёт первым, дальше — по уровню развития */
+const order = st => state.players.map((p, i) => i)
+  .sort((a, b) => st.totals[b] - st.totals[a]
+    || (st.isLead(b) ? 1 : 0) - (st.isLead(a) ? 1 : 0)
+    || (state.players[b].v.level || 1) - (state.players[a].v.level || 1));
+
+function download(blob, name) {
+  const url = URL.createObjectURL(blob), a = document.createElement('a');
+  a.href = url; a.download = name; document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 2000);
+}
+
+/* текст в том же виде, в каком его пишут на листочке */
+function resultText(counts) {
+  const ps = state.players, st = standing(), totals = st.totals;
+  return order(st).map(i => {
+    const p = ps[i], v = p.v, L = [p.name || 'Без имени'];
+    GOODS.forEach(g => { if (v[g.id]) L.push(counts ? `${g.name} ${v[g.id]}×${g.vp} ${v[g.id] * g.vp}` : `${g.name} ${v[g.id] * g.vp}`); });
+    if (v.coins) L.push('Монеты ' + v.coins);
+    const s = v.stations || 0, c = v.citizens || 0, lvl = v.level || 1;
+    if (s + c) L.push(`${s}+${c}*${lvl} ${(s + c) * lvl}`);
+    L.push(String(totals[i]));
+    return L.join('\n');
+  }).join('\n\n') + '\n';
+}
+
+function resultData(now) {
+  const ps = state.players, st = standing(), totals = st.totals;
+  return {
+    game:'Орлеан',
+    exportedAt:now.toISOString(),
+    exportedAtLocal:dateRu(now),
+    tiebreak:st.tied ? {
+      reason:'равные очки и равный уровень развития',
+      resolved:st.choice != null,
+      byDevelopmentTrack:st.choice === 'all' ? 'ничья' : (ps.find(p => p.id === st.choice)?.name ?? null)
+    } : null,
+    players:order(st).map(i => {
+      const p = ps[i], v = p.v;
+      return {
+        name:p.name, color:COLORS[p.color][1], place:placeOf(totals, i), winner:st.isLead(i), total:totals[i],
+        goods:Object.fromEntries(GOODS.map(g => [g.id, {name:g.name, count:v[g.id] || 0, points:(v[g.id] || 0) * g.vp}])),
+        coins:{count:v.coins || 0, points:v.coins || 0},
+        level:v.level || 1,
+        city:{stations:v.stations || 0, citizens:v.citizens || 0, points:points(p, CAT.city) || 0}
+      };
+    })
+  };
+}
+
+/* --- текстовый диалог --- */
+const textDlg = $('#textDlg'), txtSheet = $('#txtSheet'), txtCounts = $('#txtCounts'), txtSay = $('#txtSay');
+const COUNTS_KEY = 'orleans-text-counts';
+try { txtCounts.checked = localStorage.getItem(COUNTS_KEY) === '1'; } catch (e) {}
+const paintText = () => { txtSheet.textContent = resultText(txtCounts.checked); };
+$('#expTxt').addEventListener('click', () => { paintText(); txtSay.textContent = ''; openDlg(textDlg); });
+txtCounts.addEventListener('change', () => {
+  try { localStorage.setItem(COUNTS_KEY, txtCounts.checked ? '1' : '0'); } catch (e) {}
+  paintText();
+});
+$('#txtCopy').addEventListener('click', async () => {
+  const text = resultText(txtCounts.checked);
+  try {
+    if (navigator.clipboard && window.isSecureContext) await navigator.clipboard.writeText(text);
+    else {
+      const ta = document.createElement('textarea');
+      ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove();
+    }
+    txtSay.textContent = 'Скопировано — вставляйте куда нужно.';
+  } catch (e) { txtSay.textContent = 'Скопировать не вышло: выделите текст выше вручную.'; }
+});
+$('#txtFile').addEventListener('click', () => {
+  const now = new Date();
+  download(new Blob(['﻿' + resultText(txtCounts.checked).replace(/\n/g, '\r\n')], {type:'text/plain;charset=utf-8'}), `orleans-${stamp(now)}.txt`);
+});
+$('#expJson').addEventListener('click', () => {
+  const now = new Date();
+  download(new Blob([JSON.stringify(resultData(now), null, 2)], {type:'application/json'}), `orleans-${stamp(now)}.json`);
+});
+textDlg.addEventListener('click', e => { if (e.target === textDlg || e.target.closest('[data-close]')) closeDlg(textDlg); });
+
+/* --- картинка --- */
+const ICONS = {};
+const loadIcon = src => new Promise(res => {
+  if (ICONS[src]) return res(ICONS[src]);
+  const im = new Image();
+  im.onload = () => { ICONS[src] = im; res(im); };
+  im.onerror = () => res(null);
+  im.src = src;
+});
+function rrect(ctx, x, y, w, h, r) {
+  ctx.beginPath(); ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+}
+function fitText(ctx, text, max) {
+  if (ctx.measureText(text).width <= max) return text;
+  let t = text;
+  while (t.length > 1 && ctx.measureText(t + '…').width > max) t = t.slice(0, -1);
+  return t + '…';
+}
+/* вымпел очков, тот же контур, что и в SVG (система координат 44×56) */
+function drawPennant(ctx, cx, cy, w, n) {
+  const k = w / 44, x = cx - w / 2, y = cy - (w * 56 / 44) / 2;
+  const P = (px, py) => [x + px * k, y + py * k];
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(...P(3.5, 7.5));
+  ctx.bezierCurveTo(...P(9.5, 2.9), ...P(34.5, 2.9), ...P(40.5, 7.5));
+  ctx.lineTo(...P(38, 34.5)); ctx.lineTo(...P(22, 53)); ctx.lineTo(...P(6, 34.5)); ctx.closePath();
+  ctx.fillStyle = n == null ? '#6E6252' : '#1F4E9C'; ctx.fill();
+  ctx.lineWidth = 2.6 * k; ctx.strokeStyle = n == null ? '#4A4033' : '#6E4E12'; ctx.lineJoin = 'round'; ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(...P(3.5, 7.5));
+  ctx.bezierCurveTo(...P(9.5, 2.9), ...P(34.5, 2.9), ...P(40.5, 7.5));
+  ctx.lineTo(...P(39.7, 15.5));
+  ctx.bezierCurveTo(...P(33.7, 11.3), ...P(10.3, 11.3), ...P(4.3, 15.5));
+  ctx.closePath();
+  ctx.fillStyle = n == null ? '#8C7F6B' : '#D2A02C'; ctx.fill();
+  ctx.beginPath(); ctx.moveTo(...P(16.6, 42.4)); ctx.lineTo(...P(27.4, 42.4)); ctx.lineTo(...P(22, 53)); ctx.closePath();
+  ctx.fillStyle = n == null ? '#A2937C' : '#E9BC3E'; ctx.fill();
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.font = `700 ${w * .52}px "PT Sans", sans-serif`;
+  ctx.fillStyle = n == null ? '#F4EADA' : '#FFDE83';
+  ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = 3 * k; ctx.shadowOffsetY = k;
+  ctx.fillText(n == null ? '—' : String(n), cx, cy - w * .04);
+  ctx.restore();
+}
+function drawBoard(ctx, x, y, w, h, r) {
+  rrect(ctx, x, y, w, h, r);
+  ctx.save(); ctx.clip();
+  ctx.fillStyle = '#6E5231'; ctx.fillRect(x, y, w, h);
+  const g = ctx.createRadialGradient(x + w / 2, y + h / 2, Math.min(w, h) * .2, x + w / 2, y + h / 2, Math.max(w, h) * .75);
+  g.addColorStop(0, 'rgba(255,225,170,.12)'); g.addColorStop(1, 'rgba(0,0,0,.35)');
+  ctx.fillStyle = g; ctx.fillRect(x, y, w, h);
+  ctx.restore();
+}
+
+const ROWS = CATS.filter(c => c.kind !== 'level');
+const countOf = (p, c) => c.kind === 'city' ? (p.v.stations || 0) + (p.v.citizens || 0) : p.v[c.id];
+
+async function buildImage(now, details) {
+  try {
+    await Promise.all(['400 60px Forum', '700 30px "PT Sans"', '400 30px "PT Sans"']
+      .map(f => document.fonts.load(f, '0123456789АаБбВвЁё—×')));
+  } catch (e) {}
+  const icons = {};
+  await Promise.all([...ROWS.map(c => c.ico), 'star'].map(async n => { icons[n] = await loadIcon(`img/${n}.png`); }));
+
+  const ps = state.players, n = ps.length, st = standing(), totals = st.totals, ord = order(st);
+  const isLead = st.isLead;
+  const tieNote = !st.tied ? '' : st.choice == null
+    ? 'Ничья по очкам не разрешена: посмотрите, чей маркер дальше по шкале развития'
+    : st.choice === 'all'
+      ? 'Ничья по очкам и по шкале развития — победителей несколько'
+      : 'Ничья по очкам: победа по шкале развития';
+  const W = 1080, P = 46, inner = W - P * 2;
+  const cardsTop = P + (tieNote ? 168 : 136);
+  const perRow = Math.min(n, 3), gap = 16, cardW = (inner - gap * (perRow - 1)) / perRow, cardH = 132, cardRows = Math.ceil(n / perRow);
+  const colW = Math.min(details ? 190 : 132, Math.floor((inner - (details ? 360 : 430)) / n));
+  const rowH = 68, headH = 92, totalH = 92;
+  const tableTop = cardsTop + cardRows * (cardH + gap) + 16;
+  const H = tableTop + headH + ROWS.length * rowH + 14 + totalH + 66;
+
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const ctx = cv.getContext('2d');
+  ctx.fillStyle = '#E3CCA2'; ctx.fillRect(0, 0, W, H);
+  const pg = ctx.createLinearGradient(0, 0, 0, H);
+  pg.addColorStop(0, 'rgba(255,246,224,.55)'); pg.addColorStop(1, 'rgba(150,115,60,.18)');
+  ctx.fillStyle = pg; ctx.fillRect(0, 0, W, H);
+
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = '#8E2A22'; ctx.font = '400 66px Forum, Georgia, serif'; ctx.fillText('Орлеан', P, P + 58);
+  ctx.fillStyle = '#6B563A'; ctx.font = '400 27px "PT Sans", sans-serif';
+  ctx.fillText('Итоги партии · ' + dateRu(now), P, P + 98);
+  if (tieNote) {
+    ctx.fillStyle = '#8E2A22'; ctx.font = '700 23px "PT Sans", sans-serif';
+    ctx.fillText(tieNote, P, P + 136);
+  }
+
+  ord.forEach((i, k) => {
+    const p = ps[i], x = P + (k % perRow) * (cardW + gap), y = cardsTop + Math.floor(k / perRow) * (cardH + gap);
+    const win = isLead(i);
+    drawBoard(ctx, x, y, cardW, cardH, 16);
+    if (win) { ctx.lineWidth = 4; ctx.strokeStyle = '#E3B23C'; rrect(ctx, x + 2, y + 2, cardW - 4, cardH - 4, 15); ctx.stroke(); }
+    ctx.beginPath(); ctx.arc(x + 44, y + cardH / 2, 26, 0, Math.PI * 2);
+    ctx.fillStyle = COLORS[p.color][0]; ctx.fill();
+    ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,.35)'; ctx.stroke();
+    const tx = x + 84, tw = cardW - 84 - 16;
+    ctx.textAlign = 'left';
+    ctx.font = '400 19px "PT Sans", sans-serif'; ctx.fillStyle = win ? '#F3D06B' : 'rgba(250,240,220,.8)';
+    ctx.fillText(`${placeOf(totals, i)} место${win ? ' · победа' : ''}`, tx, y + 34);
+    ctx.font = '700 28px "PT Sans", sans-serif'; ctx.fillStyle = '#FCF2DC';
+    ctx.fillText(fitText(ctx, p.name || 'Без имени', tw), tx, y + 70);
+    ctx.font = '400 46px Forum, Georgia, serif'; ctx.fillStyle = win ? '#FFD766' : '#FCF2DC';
+    ctx.fillText(String(totals[i]), tx, y + 116);
+    const numW = ctx.measureText(String(totals[i])).width;
+    ctx.font = '400 22px "PT Sans", sans-serif'; ctx.fillStyle = 'rgba(250,240,220,.8)';
+    ctx.fillText(plural(totals[i], ['очко', 'очка', 'очков']), tx + numW + 9, y + 116);
+  });
+
+  const colX = i => W - P - 10 - (n - i) * colW + colW / 2;
+  let y = tableTop;
+  drawBoard(ctx, P, y, inner, headH - 14, 13);
+  if (details) {
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.font = '400 21px "PT Sans", sans-serif';
+    ctx.fillStyle = 'rgba(250,240,220,.75)';
+    ctx.fillText('× — сколько жетонов', P + 18, y + (headH - 14) / 2);
+    ctx.textBaseline = 'alphabetic';
+  }
+  ps.forEach((p, i) => {
+    ctx.beginPath(); ctx.arc(colX(i), y + 26, 15, 0, Math.PI * 2);
+    ctx.fillStyle = COLORS[p.color][0]; ctx.fill();
+    ctx.lineWidth = 2.5; ctx.strokeStyle = 'rgba(0,0,0,.35)'; ctx.stroke();
+    ctx.textAlign = 'center'; ctx.font = '700 22px "PT Sans", sans-serif'; ctx.fillStyle = '#FCF2DC';
+    ctx.fillText(fitText(ctx, p.name || '—', colW - 8), colX(i), y + 68);
+  });
+  y += headH;
+  ROWS.forEach(c => {
+    const h = rowH - 8, cy = y + h / 2;
+    drawBoard(ctx, P, y, inner, h, 11);
+    const ic = icons[c.ico];
+    if (ic) ctx.drawImage(ic, P + 12, cy - 22, 44, 44);
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.font = '700 25px "PT Sans", sans-serif'; ctx.fillStyle = '#FCF2DC';
+    ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = 3; ctx.shadowOffsetY = 1;
+    ctx.fillText(fitText(ctx, c.short, colX(0) - colW / 2 - (P + 68) - 8), P + 68, cy + 1);
+    ctx.shadowColor = 'transparent';
+    ps.forEach((p, i) => {
+      const px = details ? colX(i) + colW / 2 - 30 : colX(i);
+      drawPennant(ctx, px, cy, 40, points(p, c));
+      if (!details) return;
+      const cnt = countOf(p, c); if (cnt == null) return;
+      const txt = c.kind === 'city' ? `${p.v.stations || 0}+${p.v.citizens || 0} ×${p.v.level || 1}` : '×' + cnt;
+      ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; ctx.font = '700 22px "PT Sans", sans-serif'; ctx.fillStyle = '#FCF2DC';
+      ctx.shadowColor = 'rgba(0,0,0,.7)'; ctx.shadowBlur = 3; ctx.shadowOffsetY = 1;
+      ctx.fillText(txt, px - 28, cy + 1);
+      ctx.shadowColor = 'transparent';
+    });
+    y += rowH;
+  });
+  y += 14;
+  const th = totalH - 10, ty = y + th / 2;
+  drawBoard(ctx, P, y, inner, th, 13);
+  ctx.textBaseline = 'middle'; ctx.textAlign = 'left'; ctx.fillStyle = '#FCF2DC'; ctx.font = '400 38px Forum, Georgia, serif';
+  ctx.fillText('Итого', P + 20, ty);
+  ps.forEach((p, i) => {
+    ctx.textAlign = 'center'; ctx.font = '400 44px Forum, Georgia, serif';
+    ctx.fillStyle = isLead(i) ? '#FFD766' : '#FCF2DC';
+    ctx.fillText(String(totals[i]), colX(i), ty + 2);
+  });
+
+  ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';
+  ctx.font = '400 19px "PT Sans", sans-serif'; ctx.fillStyle = 'rgba(80,62,38,.75)';
+  ctx.fillText('Орлеан · счётный лист', P, H - 28);
+  if (/^https?:$/.test(location.protocol)) {
+    ctx.textAlign = 'right';
+    ctx.fillText(location.host + location.pathname.replace(/index\.html$/, ''), W - P, H - 28);
+  }
+  return new Promise((res, rej) => cv.toBlob(b => b ? res(b) : rej(new Error('браузер не смог сохранить картинку')), 'image/png'));
+}
+
+const exportDlg = $('#exportDlg'), exportImg = $('#exportImg'), imgWarn = $('#imgWarn'), expDetails = $('#expDetails');
+const DETAILS_KEY = 'orleans-export-details';
+let exportFile = null;
+try { expDetails.checked = localStorage.getItem(DETAILS_KEY) === '1'; } catch (e) {}
+async function renderExport() {
+  const now = new Date(), blob = await buildImage(now, expDetails.checked);
+  exportFile = new File([blob], `orleans-${stamp(now)}.png`, {type:'image/png'});
+  if (exportImg.src.startsWith('blob:')) URL.revokeObjectURL(exportImg.src);
+  exportImg.src = URL.createObjectURL(blob);
+  imgWarn.hidden = true;
+  $('#shareImg').hidden = !(navigator.canShare && navigator.canShare({files:[exportFile]}));
+}
+const exportFailed = err => {
+  exportFile = null; exportImg.removeAttribute('src'); $('#shareImg').hidden = true;
+  imgWarn.hidden = false;
+  imgWarn.textContent = location.protocol === 'file:'
+    ? 'Картинка не рисуется, когда страница открыта с диска: браузер запрещает холсту читать локальные файлы. На GitHub Pages всё заработает — а пока выгрузите текстом.'
+    : 'Не получилось нарисовать картинку: ' + err.message + '. Попробуйте выгрузить текстом.';
+};
+$('#expImg').addEventListener('click', async e => {
+  const btn = e.currentTarget, label = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Рисую…';
+  openDlg(exportDlg);
+  try { await renderExport(); } catch (err) { exportFailed(err); }
+  btn.disabled = false; btn.textContent = label;
+});
+expDetails.addEventListener('change', async () => {
+  try { localStorage.setItem(DETAILS_KEY, expDetails.checked ? '1' : '0'); } catch (e) {}
+  expDetails.disabled = true;
+  try { await renderExport(); } catch (err) { exportFailed(err); }
+  expDetails.disabled = false;
+});
+$('#saveImg').addEventListener('click', () => { if (exportFile) download(exportFile, exportFile.name); });
+$('#shareImg').addEventListener('click', async () => {
+  try { await navigator.share({files:[exportFile], title:'Орлеан — итоги партии'}); } catch (e) {}
+});
+exportDlg.addEventListener('click', e => { if (e.target === exportDlg || e.target.closest('[data-close]')) closeDlg(exportDlg); });
+
+renderAll();
+})();
+</script>
+</body>
+</html>
