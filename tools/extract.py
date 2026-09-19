@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """Вырезает иллюстрации из правил «Орлеана» в папку img/ проекта."""
-import os, pymupdf, numpy as np
+import os, io, pymupdf, numpy as np
 from collections import deque
-from PIL import Image, ImageFilter
+from PIL import Image, ImageDraw, ImageFilter
 
 # Путь к правилам можно задать переменной окружения ORLEANS_PDF.
 PDF = os.environ.get('ORLEANS_PDF', r'M:\Downloads\Orleans.pdf')
@@ -66,12 +66,40 @@ def strip_bg(im, tol=34):
     rgba = im.convert('RGBA'); rgba.putalpha(alpha)
     return rgba.crop(rgba.getbbox() or (0, 0, im.width, im.height))
 
-def fit(im, size):
-    """Вписывает картинку в квадрат size×size, не растягивая."""
-    im = im.copy(); im.thumbnail((size, size), Image.LANCZOS)
+def fit(im, size, pad=0):
+    """Вписывает картинку в квадрат size×size, сохраняя пропорции."""
+    k = min((size - pad * 2) / im.width, (size - pad * 2) / im.height)
+    im = im.resize((max(1, round(im.width * k)), max(1, round(im.height * k))), Image.LANCZOS)
     canvas = Image.new('RGBA', (size, size), (0, 0, 0, 0))
     canvas.paste(im, ((size - im.width) // 2, (size - im.height) // 2))
     return canvas
+
+def sharpen(im, percent=70):
+    """Лёгкая резкость: оригиналы в правилах мелкие, после увеличения мылят."""
+    rgb = im.convert('RGB').filter(ImageFilter.UnsharpMask(1.8, percent, 2))
+    return Image.merge('RGBA', (*rgb.split(), im.getchannel('A')))
+
+def masked(xref, smask):
+    """Достаёт картинку вместе с её альфа-маской из PDF — контур получается точным,
+    без заливки фона от краёв и без риска срезать обводку."""
+    pm = pymupdf.Pixmap(pymupdf.Pixmap(doc, xref), pymupdf.Pixmap(doc, smask))
+    im = Image.frombytes('RGBA', (pm.width, pm.height), pm.samples)
+    bb = im.getchannel('A').getbbox()
+    return im.crop(bb) if bb else im
+
+def disc(xref, size, rim=4.5, ss=4):
+    """Круглый жетон (монета): маски в PDF нет, зато форма — окружность,
+    поэтому режем по ней со сглаживанием и возвращаем обводку, как в правилах."""
+    im = Image.open(io.BytesIO(doc.extract_image(xref)['image'])).convert('RGB')
+    out = im.resize((size, size), Image.LANCZOS).convert('RGBA')
+    box = (ss, ss, size * ss - ss - 1, size * ss - ss - 1)
+    m = Image.new('L', (size * ss,) * 2, 0)
+    ImageDraw.Draw(m).ellipse(box, fill=255)
+    out.putalpha(m.resize((size, size), Image.LANCZOS))
+    ring = Image.new('RGBA', (size * ss,) * 2, (0, 0, 0, 0))
+    ImageDraw.Draw(ring).ellipse(box, outline=(26, 20, 12, 255), width=round(ss * rim))
+    out.alpha_composite(ring.resize((size, size), Image.LANCZOS))
+    return out
 
 # --- жетоны товаров (стр. 3, рынок) и прочие значки (стр. 9, подсчёт очков) ---
 CUT = 17.0
@@ -81,12 +109,18 @@ for name, cx in TOKENS:
     fit(strip_bg(im), 160).save(f'{OUT}/{name}.png')
     print(name, 'ok')
 
-for name, rect, dpi in [('coin', (386, 454, 421, 490), 560),
-                        ('citizen', (440, 491, 478, 539), 560),
-                        ('station', (402, 495, 434, 535), 620),
-                        ('star', (497, 496, 534, 534), 560)]:
-    fit(strip_bg(render(8, rect, dpi)), 160).save(f'{OUT}/{name}.png')
+# Фактория и звезда развития лежат в PDF со своими альфа-масками — берём их
+# оттуда: контур выходит целым, тогда как вырезание с отрендеренной страницы
+# срезало фактории правый бок, а звезде оставляло серый ореол.
+for name, xref, smask, pad in [('station', 689, 690, 4), ('star', 691, 692, 2)]:
+    sharpen(fit(masked(xref, smask), 160, pad)).save(f'{OUT}/{name}.png')
     print(name, 'ok')
+
+sharpen(disc(687, 160)).save(f'{OUT}/coin.png')          # монета — маски нет, режем по кругу
+print('coin ok')
+
+sharpen(fit(strip_bg(render(8, (440, 491, 478, 539), 560)), 160, 2)).save(f'{OUT}/citizen.png')
+print('citizen ok')
 
 # --- тайлы производств (стр. 10) — крупная «шапка» для каждого товара ---
 PLACES = [('grain', 38.0, 107.6), ('cheese', 111.8, 181.7), ('wine', 184.3, 254.8),
@@ -97,7 +131,6 @@ for name, x0, x1 in PLACES:
     print('tile-' + name, im.size)
 
 # --- обложка (для превью в соцсетях) и фон-пергамент ---
-import io
 cov = Image.open(io.BytesIO(doc.extract_image(14)['image'])).convert('RGB')
 w, h = cov.size
 cov.resize((600, int(600 * h / w)), Image.LANCZOS).save(f'{OUT}/cover.jpg', quality=80, optimize=True)

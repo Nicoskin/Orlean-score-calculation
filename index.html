@@ -49,6 +49,10 @@ body{margin:0;color:var(--ink);font:400 16px/1.45 var(--body);-webkit-text-size-
 button,input{font:inherit;color:inherit}
 button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 :focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+/* У степпера и переключателя уровня overflow:hidden, и внешняя обводка фокуса
+   обрезается до синих полосок по бокам поля. Внутри таких блоков подсвечиваем
+   рамкой внутрь — она видна целиком и не лезет на соседние кнопки. */
+.stepper :focus-visible,.seg :focus-visible{outline:none;box-shadow:inset 0 0 0 3px var(--focus)}
 h1,h2,h3{text-wrap:balance}
 img{max-width:100%}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
@@ -392,7 +396,7 @@ const CATS = [
   {id:'level', kind:'level', name:'Уровень развития', short:'Уровень развития', ico:'star',
     rule:'Множитель для факторий и жетонов горожан',
     hint:() => ({art:'<img src="img/star.png" alt="Звезда уровня развития" style="max-width:150px;margin:0 auto;box-shadow:none">',
-      text:['Уровень развития — это <b>жёлтая звезда</b>, которую ваш маркер на шкале развития прошёл последней. В начале игры уровень равен 1, максимум — 5.',
+      text:['Уровень развития — это <b>жёлтая звезда</b>, которую ваш маркер на шкале развития прошёл последней. В начале игры уровень равен 1, максимум — 6.',
             'Сам по себе уровень очков не даёт: на него умножаются фактории и жетоны горожан.',
             'При равенстве очков побеждает тот, кто продвинулся дальше по шкале развития — поэтому уровень стоит ввести всем.']})},
   {id:'city', kind:'city', name:'Фактории и горожане', short:'Фактории и горожане', ico:'station',
@@ -513,7 +517,7 @@ function catHTML(c) {
   let body;
   if (c.kind === 'level') {
     body = `<ul class="plist">${ps.map(p => `<li class="prow wide">${name(p)}<span class="lvlout" data-lvl="${p.id}"></span>
-      <div class="rctrl"><div class="seg" role="group" aria-label="Уровень развития: ${esc(p.name)}">${[1,2,3,4,5].map(n =>
+      <div class="rctrl"><div class="seg" role="group" aria-label="Уровень развития: ${esc(p.name)}">${[1, 2, 3, 4, 5, 6].map(n =>
         `<button type="button" data-level="${n}" data-pid="${p.id}" aria-pressed="${(p.v.level || 1) === n}" aria-label="Уровень ${n}">${img('star')}<b>${n}</b></button>`).join('')}</div></div></li>`).join('')}</ul>`;
   } else if (c.kind === 'city') {
     body = `<ul class="plist">${ps.map(p => `<li class="prow wide">${name(p)}${pts(p)}
