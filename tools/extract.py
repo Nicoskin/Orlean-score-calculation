@@ -122,6 +122,29 @@ print('coin ok')
 sharpen(fit(strip_bg(render(8, (440, 491, 478, 539), 560)), 160, 2)).save(f'{OUT}/citizen.png')
 print('citizen ok')
 
+def token(xref, size, r=0.11, ss=4):
+    """Квадратный жетон персонажа: скругляем углы и обводим тёмным,
+    чтобы он смотрелся так же, как плашки товаров."""
+    im = Image.open(io.BytesIO(doc.extract_image(xref)['image'])).convert('RGB')
+    out = im.resize((size, size), Image.LANCZOS).convert('RGBA')
+    box, rad = (ss, ss, size * ss - ss - 1, size * ss - ss - 1), round(size * ss * r)
+    m = Image.new('L', (size * ss,) * 2, 0)
+    ImageDraw.Draw(m).rounded_rectangle(box, rad, fill=255)
+    out.putalpha(m.resize((size, size), Image.LANCZOS))
+    edge = Image.new('RGBA', (size * ss,) * 2, (0, 0, 0, 0))
+    ImageDraw.Draw(edge).rounded_rectangle(box, rad, outline=(26, 20, 12, 255), width=round(ss * 5))
+    out.alpha_composite(edge.resize((size, size), Image.LANCZOS))
+    return out
+
+# Персонажи для памятки по подготовке. Кто есть кто — сверено по тому, в каком
+# разделе правил лежит картинка (Ферма, Деревня, Университет, Замок, Монастырь),
+# а не по внешнему виду: учёный и монах на глаз легко путаются.
+CHARS = [('farmer', 371), ('sailor', 366), ('craftsman', 368), ('merchant', 519),
+         ('knight', 539), ('scholar', 536), ('monk', 542)]
+for name, xref in CHARS:
+    sharpen(token(xref, 160)).save(f'{OUT}/ch-{name}.png')
+print('персонажи ok:', ', '.join(n for n, _ in CHARS))
+
 # --- тайлы производств (стр. 10) — крупная «шапка» для каждого товара ---
 PLACES = [('grain', 38.0, 107.6), ('cheese', 111.8, 181.7), ('wine', 184.3, 254.8),
           ('wool', 257.6, 328.1), ('brocade', 331.8, 402.2)]
@@ -153,3 +176,14 @@ icon.paste(O2, ((side - O2.width) // 2, (side - O2.height) // 2), O2)
 icon.resize((256, 256), Image.LANCZOS).quantize(colors=128, method=Image.MEDIANCUT, dither=Image.FLOYDSTEINBERG)\
     .save(f'{OUT}/icon.png', optimize=True)
 print('icon ok')
+
+# --- иконки для установки на телефон (нужны манифесту) ---
+for px in (192, 512):
+    icon.resize((px, px), Image.LANCZOS).save(f'{OUT}/icon-{px}.png', optimize=True)
+# maskable: Android обрезает значок под свою форму, поэтому буква тут мельче
+# и с запасом по краям — иначе ей срежет бока.
+mask_icon = Image.new('RGB', (side, side), (238, 223, 189))
+O3 = O.copy(); O3.thumbnail((int(side * .56), int(side * .56)), Image.LANCZOS)
+mask_icon.paste(O3, ((side - O3.width) // 2, (side - O3.height) // 2), O3)
+mask_icon.resize((512, 512), Image.LANCZOS).save(f'{OUT}/icon-maskable.png', optimize=True)
+print('иконки PWA ok')
